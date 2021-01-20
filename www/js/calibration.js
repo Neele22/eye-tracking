@@ -1,5 +1,6 @@
 var PointCalibrate = 0;
 var CalibrationPoints={};
+var minimumAccuracy = 0;
 
 /**
  * Clear the canvas and the calibration button.
@@ -95,26 +96,54 @@ $(document).ready(function(){
                       var precision_measurement = calculatePrecision(past50);
                       var accuracyLabel = "<a>Accuracy | "+precision_measurement+"%</a>";
                       document.getElementById("Accuracy").innerHTML = accuracyLabel; // Show the accuracy in the nav bar.
-                      swal({
-                        title: "Your accuracy measure is " + precision_measurement + "%",
-                        allowOutsideClick: false,
-                        buttons: {
-                          cancel: "Recalibrate",
-                          confirm: true,
-                        }
-                      }).then(isConfirm => {
-                          if (isConfirm){
-                            //clear the calibration & hide the last middle button
-                            ClearCanvas();
-                          } else {
-                            //use restart function to restart the calibration
-                            document.getElementById("Accuracy").innerHTML = "<a>Not yet Calibrated</a>";
-                            webgazer.clearData();
-                            ClearCalibration();
-                            ClearCanvas();
-                            ShowCalibrationPoint();
+
+                      if (precision_measurement < minimumAccuracy) {
+                        swal({
+                          title: "Your accuracy measure is " + precision_measurement + "%.",
+                          text: "This is too low, so you need to recalibrate.",
+                          allowOutsideClick: false,
+                          buttons: {
+                            confirm: {
+                              text: "Recalibrate",
+                              value: true
+                            }
                           }
-                      });
+                        }).then(isConfirm => {
+                            if (isConfirm) {
+                              //use restart function to restart the calibration
+                              document.getElementById("Accuracy").innerHTML = "<a>Not yet Calibrated</a>";
+                              webgazer.clearData();
+                              ClearCalibration();
+                              ClearCanvas();
+                              ShowCalibrationPoint();
+                            }
+                        });
+                      } else {
+                        swal({
+                          title: "Your accuracy measure is " + precision_measurement + "%",
+                          allowOutsideClick: false,
+                          buttons: {
+                            cancel: "Recalibrate",
+                            confirm: {
+                              text: "Continue to trial",
+                              value: true,
+                              className: "end_cal_jspsych"
+                            }
+                          }
+                        }).then(isConfirm => {
+                            if (isConfirm){
+                              //clear the calibration & hide the last middle button
+                              ClearCanvas();
+                            } else {
+                              //use restart function to restart the calibration
+                              document.getElementById("Accuracy").innerHTML = "<a>Not yet Calibrated</a>";
+                              webgazer.clearData();
+                              ClearCalibration();
+                              ClearCanvas();
+                              ShowCalibrationPoint();
+                            }
+                        });
+                      }
                   });
                 });
             });
