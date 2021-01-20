@@ -1,2 +1,2 @@
 # eye-tracking
-eyetracking in with webgazer
+eyetracking in jspsych with webgazer
