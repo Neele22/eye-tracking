@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="./js/jquery.min.js"></script>
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+        
+        <script src="./js/webgazer.js"></script>
+
+        <script src="jspsych.js"></script>
+        <script src="plugins/jspsych-html-keyboard-response.js"></script>
+        <script src="jspsych-eyetracking.js"></script>
+
+        <link rel="stylesheet" href="css/jspsych.css">
+        <link rel="stylesheet" href="css/jspsych-eyetracking.css">
+    </head>
+    <body>
+    </body>
+    <script>
+        var timeline = [];
+
+        var consent = {
+            type: "html-keyboard-response",
+            stimulus: "this is the consent form. press any key"
+        };
+        timeline.push(consent);
+
+        var calibration = {
+            type: "eye-tracking",
+            minimumAccuracy: 0
+        };
+        timeline.push(calibration);
+
+        var trial = {
+            type: "html-keyboard-response",
+            stimulus: "this is the trial. press any key"
+        };
+        timeline.push(trial);
+
+        jsPsych.init({
+            timeline: timeline
+        });
+    </script>
+</html>
