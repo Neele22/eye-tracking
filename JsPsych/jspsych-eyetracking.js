@@ -142,7 +142,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     * This function listens for button clicks on the html page
     * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision
     */
-    function StartCalibration(minAcc, data){
+    function StartCalibration(minAcc, data, vidOn, predOn){
       PopUpInstruction();
       ClearCanvas();
       ShowCalibrationPoint();
@@ -232,9 +232,8 @@ jsPsych.plugins['eye-tracking'] = (function(){
                             if (isConfirm){
                               //clear the calibration & hide the last middle button
                               ClearCanvas();
-                              webgazer.showVideoPreview(false) /* shows all video previews */
-                                  .showPredictionPoints(false) /* shows a square every 100 milliseconds where current prediction is */
-                                  .applyKalmanFilter(false); /* Kalman Filter defaults to on.  */                
+                              webgazer.showVideoPreview(vidOn) /* shows all video previews */
+                                  .showPredictionPoints(predOn) /* shows a square every 100 milliseconds where current prediction is */             
                               jsPsych.finishTrial();
                             } else {
                               //use restart function to restart the calibration
@@ -285,9 +284,17 @@ jsPsych.plugins['eye-tracking'] = (function(){
     plugin.info = {
       name: 'eye-tracking',
       parameters: {
-        minimumAccuracy: {
+        minimumAccuracy: { // minimum accuracy to pass calibration
           type: jsPsych.plugins.parameterType.INT,
           default: 50
+        },
+        videoOn: { // if true: leave video on after calibration
+          type: jsPsych.plugins.parameterType.BOOL,
+          default: false
+        },
+        predictionOn: { // if true: leave points prediction on after calibration
+          type: jsPsych.plugins.parameterType.BOOL,
+          default: false
         }
       }
     }
@@ -317,7 +324,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
 
       // starting calibration
       StartWebgazer();
-      StartCalibration(trial.minimumAccuracy, trial_data);
+      StartCalibration(trial.minimumAccuracy, trial_data, trial.videoOn, trial.predictionOn);
 
       // closing webgazer when window is closed
       window.onbeforeunload = function() {
