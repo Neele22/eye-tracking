@@ -232,6 +232,9 @@ jsPsych.plugins['eye-tracking'] = (function(){
                             if (isConfirm){
                               //clear the calibration & hide the last middle button
                               ClearCanvas();
+                              webgazer.showVideoPreview(false) /* shows all video previews */
+                                  .showPredictionPoints(false) /* shows a square every 100 milliseconds where current prediction is */
+                                  .applyKalmanFilter(false); /* Kalman Filter defaults to on.  */                
                               jsPsych.finishTrial();
                             } else {
                               //use restart function to restart the calibration
