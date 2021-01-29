@@ -10,6 +10,8 @@
         <script src="plugins/jspsych-html-keyboard-response.js"></script>
         <script src="jspsych-eyetracking.js"></script>
 
+        <script src="plugins/jspsych-resize.js"></script>
+
         <link rel="stylesheet" href="css/jspsych.css">
         <link rel="stylesheet" href="css/jspsych-eyetracking.css">
     </head>
@@ -23,6 +25,16 @@
             stimulus: "this is the consent form. press any key"
         };
         timeline.push(consent);
+
+        var inputs = {
+            type: 'resize',
+            item_width: 8.56,
+            item_height: 5.397,
+            prompt: "<p>Click and drag the lower right corner of the box until the"+
+            " box is the same size as a credit card held up to the screen.</p>",
+            pixels_per_unit: 50 /* 50 pixels equals 1 cm */
+        };
+        timeline.push(inputs);
 
         var calibration = {
             type: "eye-tracking",
@@ -39,7 +51,10 @@
         timeline.push(trial);
 
         jsPsych.init({
-            timeline: timeline
+            timeline: timeline,
+            on_finish: function() {
+                jsPsych.data.displayData('json');
+            }
         });
     </script>
 </html>

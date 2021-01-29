@@ -1,3 +1,9 @@
+/* jpspsych content styling */
+
+#jspsych-content.eye-content {
+    transform: none !important;
+}
+
 /* Calibration point styling */
 .Calibration{
     width: 20px;

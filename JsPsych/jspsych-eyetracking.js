@@ -2,6 +2,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     // ============== global variables ================ //
     var PointCalibrate = 0;
     var CalibrationPoints={};
+    var trial_data = {};
 
     // ============== helper functions ================ //
     async function StartWebgazer(){
@@ -21,6 +22,8 @@ jsPsych.plugins['eye-tracking'] = (function(){
       var setup = function() {
   
           //Set up the main canvas. The main canvas is used to calibrate the webgazer.
+          var jspsych_content = document.getElementById("jspsych-content");
+          jspsych_content.classList.add("eye-content");
           var canvas = document.getElementById("plotting_canvas");
           canvas.width = window.innerWidth;
           canvas.height = window.innerHeight;
@@ -142,7 +145,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     * This function listens for button clicks on the html page
     * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision
     */
-    function StartCalibration(minAcc, data, vidOn, predOn){
+    function StartCalibration(minAcc, vidOn, predOn){
       PopUpInstruction();
       ClearCanvas();
       ShowCalibrationPoint();
@@ -195,7 +198,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
                       stop_storing_points_variable(); // stop storing the prediction points
                       var past50 = webgazer.getStoredPoints(); // retrieve the stored points
                       var precision_measurement = calculatePrecision(past50);
-                      data['accuracy'] = precision_measurement;
+                      trial_data['accuracy'] = precision_measurement;
 
                       if (precision_measurement < minAcc) {
                         swal({
@@ -232,9 +235,17 @@ jsPsych.plugins['eye-tracking'] = (function(){
                             if (isConfirm){
                               //clear the calibration & hide the last middle button
                               ClearCanvas();
-                              webgazer.showVideoPreview(vidOn) /* shows all video previews */
-                                  .showPredictionPoints(predOn) /* shows a square every 100 milliseconds where current prediction is */             
-                              jsPsych.finishTrial();
+
+                              // show or hide video previews and predictions
+                              webgazer.showVideoPreview(vidOn)
+                                  .showPredictionPoints(predOn)
+                              
+                              // remove eye-content class from jspsych_content to reset resizing
+                              var jspsych_content = document.getElementById("jspsych-content");
+                              jspsych_content.classList.remove("eye-content");
+
+                              // end trial
+                              jsPsych.finishTrial(trial_data);
                             } else {
                               //use restart function to restart the calibration
                               webgazer.clearData();
@@ -312,19 +323,15 @@ jsPsych.plugins['eye-tracking'] = (function(){
       <input type="button" class="Calibration" id="Pt8"></input>
       <input type="button" class="Calibration" id="Pt9"></input>
     </div>
-    `;
+    `;          
 
     plugin.trial = function(display_element, trial){
-      // saving data
-      var trial_data = {
-      };
-
       // changing display
       display_element.innerHTML = dots;
 
       // starting calibration
       StartWebgazer();
-      StartCalibration(trial.minimumAccuracy, trial_data, trial.videoOn, trial.predictionOn);
+      StartCalibration(trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
 
       // closing webgazer when window is closed
       window.onbeforeunload = function() {
