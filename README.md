@@ -22,9 +22,9 @@ To run this code, you need:
 
 1. Set up your JSPsych project using [their tutorial](https://www.jspsych.org/tutorials/hello-world/)
 
-2. Add the [plugin file](static\js\jspsych-eyetracking.js) to the "plugins" folder of your JSPsych project
+2. Add the [plugin file](./static/js/jspsych-eyetracking.js) to the "plugins" folder of your JSPsych project
 
-3. Add the [webgazer library](static\js\webgazer.js) and [jQuery](static\js\jquery.min.js) to a desired location in your project
+3. Add the [webgazer library](./static/js/webgazer.js) and [jQuery](./static/js/jquery.min.js) to a desired location in your project
 
 4. Add the following code to the header of your html file (depending on the location of your files):
 ```html
