@@ -11,6 +11,13 @@ jsPsych.plugins['eye-tracking'] = (function(){
       await webgazer.setRegression('ridge') /* currently must set regression and tracker */
           //.setTracker('clmtrackr')
           .setGazeListener(function(data, clock) {
+            // if (data == null) {
+            //   return;
+            // }
+            // console.log(data.x);
+            // console.log(data.y);
+            // trial_data['eye_x'] = data.x;
+            // trial_data['eye_y'] = data.y;
             //   console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */
             //   console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
           }).begin();
@@ -198,7 +205,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
                       stop_storing_points_variable(); // stop storing the prediction points
                       var past50 = webgazer.getStoredPoints(); // retrieve the stored points
                       var precision_measurement = calculatePrecision(past50);
-                      trial_data['accuracy'] = precision_measurement;
+                      trial_data['cal_accuracy'] = precision_measurement;
 
                       if (precision_measurement < minAcc) {
                         swal({

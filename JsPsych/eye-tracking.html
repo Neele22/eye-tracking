@@ -40,18 +40,86 @@
             type: "eye-tracking",
             minimumAccuracy: 0,
             videoOn: true,
-            predictionOn: true
+            predictionOn: true,
+            on_finish: function(trial){
+                webgazer.pause();
+            }
         };
         timeline.push(calibration);
 
+        var eyeData;
+        var eye_tracking_interval;
+
         var trial = {
             type: "html-keyboard-response",
-            stimulus: "this is the trial. press any key"
+            stimulus: "this is trial 1. press any key",
+            on_start: function(trial) {
+                webgazer.resume();
+                eyeData = [];
+                var starttime = performance.now();
+                eye_tracking_interval = setInterval(
+                    function() {
+                        webgazer.getCurrentPrediction()
+                            .then((pos) => {
+                                console.log(pos.x)
+                                eyeData.push({
+                                    'x': pos.x,
+                                    'y': pos.y,
+                                    'time_elapsed': performance.now() - starttime
+                                });
+                            });
+                    }
+                )
+            },
+            on_finish: function(trial_data){
+                webgazer.pause();
+                clearInterval(eye_tracking_interval);
+                trial_data['eye_data'] = eyeData;
+                console.log(trial_data['eye_data']);
+            }
         };
         timeline.push(trial);
 
+        var trial = {
+            type: "html-keyboard-response",
+            stimulus: "this is trial 2. press any key",
+            on_start: function(trial) {
+                webgazer.resume();
+                eyeData = [];
+                var starttime = performance.now();
+                eye_tracking_interval = setInterval(
+                    function() {
+                        webgazer.getCurrentPrediction()
+                            .then((pos) => {
+                                console.log(pos.x)
+                                eyeData.push({
+                                    'x': pos.x,
+                                    'y': pos.y,
+                                    'time_elapsed': performance.now() - starttime
+                                });
+                            });
+                    }
+                )
+            },
+            on_finish: function(trial_data){
+                webgazer.pause();
+                clearInterval(eye_tracking_interval);
+                trial_data['eye_data'] = eyeData;
+                console.log(trial_data['eye_data']);
+            }
+        };
+        timeline.push(trial);
+
+        // var past50 = webgazer.getStoredPoints(); // retrieve the stored points
+
         jsPsych.init({
             timeline: timeline,
+            on_trial_start: function(trial) {
+                console.log('start trial');
+            },
+            on_trial_finish: function(trial) {
+                console.log('stop trial');
+            },
             on_finish: function() {
                 jsPsych.data.displayData('json');
             }
