@@ -18,8 +18,13 @@
     <body>
     </body>
     <script>
-        var timeline = [];
+        // global variables
+        var eye_data;
+        var eye_tracking_interval;
 
+        // timeline
+        var timeline = [];
+        
         var consent = {
             type: "html-keyboard-response",
             stimulus: "this is the consent form. press any key"
@@ -47,35 +52,18 @@
         };
         timeline.push(calibration);
 
-        var eyeData;
-        var eye_tracking_interval;
-
         var trial = {
             type: "html-keyboard-response",
             stimulus: "this is trial 1. press any key",
             on_start: function(trial) {
-                webgazer.resume();
-                eyeData = [];
-                var starttime = performance.now();
-                eye_tracking_interval = setInterval(
-                    function() {
-                        webgazer.getCurrentPrediction()
-                            .then((pos) => {
-                                console.log(pos.x)
-                                eyeData.push({
-                                    'x': pos.x,
-                                    'y': pos.y,
-                                    'time_elapsed': performance.now() - starttime
-                                });
-                            });
-                    }
-                )
+                var eyes = collectEyeData();
+                eye_data = eyes[0];
+                eye_tracking_interval = eyes[1];
             },
             on_finish: function(trial_data){
                 webgazer.pause();
                 clearInterval(eye_tracking_interval);
-                trial_data['eye_data'] = eyeData;
-                console.log(trial_data['eye_data']);
+                trial_data['eye_data'] = eye_data;
             }
         };
         timeline.push(trial);
@@ -84,28 +72,14 @@
             type: "html-keyboard-response",
             stimulus: "this is trial 2. press any key",
             on_start: function(trial) {
-                webgazer.resume();
-                eyeData = [];
-                var starttime = performance.now();
-                eye_tracking_interval = setInterval(
-                    function() {
-                        webgazer.getCurrentPrediction()
-                            .then((pos) => {
-                                console.log(pos.x)
-                                eyeData.push({
-                                    'x': pos.x,
-                                    'y': pos.y,
-                                    'time_elapsed': performance.now() - starttime
-                                });
-                            });
-                    }
-                )
+                var eyes = collectEyeData();
+                eye_data = eyes[0];
+                eye_tracking_interval = eyes[1];
             },
             on_finish: function(trial_data){
                 webgazer.pause();
                 clearInterval(eye_tracking_interval);
-                trial_data['eye_data'] = eyeData;
-                console.log(trial_data['eye_data']);
+                trial_data['eye_data'] = eye_data;
             }
         };
         timeline.push(trial);

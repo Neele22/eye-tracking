@@ -5,25 +5,21 @@ jsPsych.plugins['eye-tracking'] = (function(){
     var trial_data = {};
 
     // ============== helper functions ================ //
+
+    /**
+    * Starts webgazer, prediction points, and video feedback.
+    */
     async function StartWebgazer(){
       webgazer.params.showVideoPreview = true;
       //start the webgazer tracker
       await webgazer.setRegression('ridge') /* currently must set regression and tracker */
-          //.setTracker('clmtrackr')
           .setGazeListener(function(data, clock) {
-            // if (data == null) {
-            //   return;
-            // }
-            // console.log(data.x);
-            // console.log(data.y);
-            // trial_data['eye_x'] = data.x;
-            // trial_data['eye_y'] = data.y;
             //   console.log(data); /* data is an object containing an x and y key which are the x and y prediction coordinates (no bounds limiting) */
             //   console.log(clock); /* elapsed time in milliseconds since webgazer.begin() was called */
           }).begin();
           webgazer.showVideoPreview(true) /* shows all video previews */
               .showPredictionPoints(true) /* shows a square every 100 milliseconds where current prediction is */
-              .applyKalmanFilter(true); /* Kalman Filter defaults to on.  */
+              .applyKalmanFilter(true); /* Kalman Filter on.  */
   
       //Set up the webgazer video feedback.
       var setup = function() {
@@ -41,23 +37,21 @@ jsPsych.plugins['eye-tracking'] = (function(){
       setup();
     }
 
-    /*
-    * Sets store_points to true, so all the occuring prediction
-    * points are stored
+    /**
+    * Sets store_points to true, so all the occuring prediction points are stored.
     */
     function store_points_variable(){
       webgazer.params.storingPoints = true;
     }
 
-    /*
-    * Sets store_points to false, so prediction points aren't
-    * stored any more
+    /**
+    * Sets store_points to false, so prediction points aren't stored anymore.
     */
     function stop_storing_points_variable(){
       webgazer.params.storingPoints = false;
     }
 
-    /*
+    /**
     * This function calculates a measurement for how precise 
     * the eye tracker currently is which is displayed to the user
     */
@@ -81,10 +75,10 @@ jsPsych.plugins['eye-tracking'] = (function(){
       return Math.round(precision);
     };
 
-    /*
+    /**
     * Calculate percentage accuracy for each prediction based on distance of
     * the prediction point from the centre point (uses the window height as
-    * lower threshold 0%)
+    * lower threshold 0%).
     */
     function calculatePrecisionPercentages(precisionPercentages, windowHeight, x50, y50, staringPointX, staringPointY) {
       for (x = 0; x < 50; x++) {
@@ -109,8 +103,8 @@ jsPsych.plugins['eye-tracking'] = (function(){
       }
     }
 
-    /*
-    * Calculates the average of all precision percentages calculated
+    /**
+    * Calculates the average of all precision percentages calculated.
     */
     function calculateAverage(precisionPercentages) {
       var precision = 0;
@@ -148,9 +142,9 @@ jsPsych.plugins['eye-tracking'] = (function(){
     }
 
     /**
-    * Load this function when the calibration plugin is loaded
-    * This function listens for button clicks on the html page
-    * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision
+    * Load this function when the calibration plugin is loaded.
+    * This function listens for button clicks on the html page,
+    * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision.
     */
     function StartCalibration(minAcc, vidOn, predOn){
       PopUpInstruction();
@@ -291,7 +285,9 @@ jsPsych.plugins['eye-tracking'] = (function(){
       PointCalibrate = 0;
     }
 
-    // sleep function because js doesn't have one, sourced from http://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
+    /** 
+    * sleep function because js doesn't have one, sourced from http://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
+    */
     function sleep (time) {
       return new Promise((resolve) => setTimeout(resolve, time));
     }
@@ -349,3 +345,29 @@ jsPsych.plugins['eye-tracking'] = (function(){
     return plugin;
   
   })();
+
+// global functions
+
+/**
+* Resumes collection of eye data (x and y coordinates of prediction).
+* @param {*} eyeData Empty Array of eyeData
+* @param {*} eyeInterval Empty timestamp
+*/
+function collectEyeData() {
+  webgazer.resume();
+  var eyeData = [];
+  var starttime = performance.now();
+  var eyeInterval = setInterval(
+      function() {
+          webgazer.getCurrentPrediction()
+              .then((pos) => {
+                  eyeData.push({
+                      'x': pos.x,
+                      'y': pos.y,
+                      'time_elapsed': performance.now() - starttime
+                  });
+              });
+      }
+  )
+  return [eyeData, eyeInterval];
+}
