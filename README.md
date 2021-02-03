@@ -1,2 +1,2 @@
-# eye-tracking
-eyetracking in jspsych with webgazer
+# Eye Tracking
+Custom JSPsych plugin for eye-tracking using Webgazer.js
