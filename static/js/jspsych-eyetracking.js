@@ -133,7 +133,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
         }
       }
 
-      trial_data['validation data'] = validationData;
+      trial_data['validation_data'] = validationData;
 
       // calculate percentage of points that were inside the maxDistance range
       var precision = (precisePoints / 50) * 100;
