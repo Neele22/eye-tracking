@@ -9,6 +9,7 @@
         <!-- JSPsych and plugins -->
         <script src="./static/js/jspsych.js"></script>
         <script src="./static/js/jspsych-html-keyboard-response.js"></script>
+        <script src="./static/js/jspsych-fullscreen.js"></script>
         <script src="./static/js/jspsych-resize.js"></script>
         <script src="./static/js/jspsych-eyetracking.js"></script>
 
@@ -31,6 +32,12 @@
             stimulus: "this is the consent form. press any key"
         };
         timeline.push(consent);
+
+        var fullscreen = {
+            type: 'fullscreen',
+            fullscreen_mode: true
+        };
+        timeline.push(fullscreen);
 
         var inputs = {
             type: 'resize',
@@ -68,6 +75,18 @@
             }
         };
         timeline.push(trial);
+
+        var calibration2 = {
+            type: "eye-tracking",
+            minimumAccuracy: 0,
+            videoOn: true,
+            predictionOn: true,
+            validation: true,
+            on_finish: function(trial){
+                webgazer.pause();
+            }
+        };
+        timeline.push(calibration2);
 
         var trial = {
             type: "html-keyboard-response",

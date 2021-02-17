@@ -3,6 +3,10 @@
     transform: none !important;
 }
 
+#jspsych-content {
+    max-width: 100% !important;
+}
+
 /* Calibration point styling */
 .Calibration {
     width: 20px;

@@ -1,0 +1,30 @@
+<html>
+    <head>
+        <script src="./static/js/jquery.min.js"></script>
+    </head>
+    <body>
+        <button id="webcam">webcam</button>
+    </body>
+    <script>
+    // ensure the user's webcam is able to use. Some browsers may automatically block the webcams.
+    function ensureWebcam(callback) {
+    $('body').html('<p>Checking webcam ...</p>');
+    window.navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function(stream) {
+        stream.getTracks().forEach(track => track.stop());
+        callback();
+    })
+    .catch(function() {
+        alert('Cannot open webcam.\nIs it blocked? This app requires webcam permission.');
+        location.reload();
+    }); 
+    }
+
+    $('#webcam').on('click', function () {
+        console.log('yes');
+        alert('webcam!');
+        ensureWebcam();
+        event.stopPropagation();
+    });
+    </script>
+</html>

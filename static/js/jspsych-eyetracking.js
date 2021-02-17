@@ -7,6 +7,28 @@ jsPsych.plugins['eye-tracking'] = (function(){
     // ============== helper functions ================ //
 
     /**
+     * Gets browser type
+     * ! Warning: browser details very unreliable, can be changed or hidden by user and browser
+     */
+    function checkBrowser() {
+
+      // check browser (unreliable!)
+      const { userAgent } = navigator
+
+      if (userAgent.includes('Firefox/')) {
+        trial_data['browser'] = 'Firefox';
+      } else if (userAgent.includes('Edg/')) {
+        trial_data['browser'] = 'Edge';
+      } else if (userAgent.includes('Chrome/')) {
+        trial_data['browser'] = 'Chrome';
+      } else if (userAgent.includes('Safari/')) {
+        trial_data['browser'] = 'Safari';
+      } else {
+        trial_data['browser'] = 'unknown';
+      }
+    }
+
+    /**
     * Starts webgazer, prediction points, and video feedback.
     */
     async function StartWebgazer(){
@@ -136,6 +158,10 @@ jsPsych.plugins['eye-tracking'] = (function(){
           confirm: true
         }
       }).then(isConfirm => {
+        if(!isFullscreen()) {
+          console.log('to full screen');
+          launchIntoFullscreen(document.documentElement);
+        }
         ShowCalibrationPoint();
       });
     }
@@ -143,122 +169,137 @@ jsPsych.plugins['eye-tracking'] = (function(){
     /**
     * Load this function when the calibration plugin is loaded.
     * This function listens for button clicks on the html page,
-    * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision.
+    * checks that all buttons have been clicked 5 times each, and then goes on to measuring the precision
+    * @param {Int} minAcc 
+    * @param {Bool} vidOn
+    * @param {Bool} predOn
     */
     function StartCalibration(minAcc, vidOn, predOn){
       PopUpInstruction();
+
       ClearCanvas();
       ShowCalibrationPoint();
 
       $(".Calibration").click(function(){ // click event on the calibration buttons
 
-      var id = $(this).attr('id');
+        var id = $(this).attr('id');
 
-      if (!CalibrationPoints[id]){ // initialises if not done
-        CalibrationPoints[id]=0;
-      }
-      CalibrationPoints[id]++; // increments values
+        if (!CalibrationPoints[id]){ // initialises if not done
+          CalibrationPoints[id]=0;
+        }
+        CalibrationPoints[id]++; // increments values
 
-      if (CalibrationPoints[id]==5){ //only turn to yellow after 5 clicks
-        $(this).css('background-color','yellow');
-        $(this).prop('disabled', true); //disables the button
-        PointCalibrate++;
-      } else if (CalibrationPoints[id]<5){
-        //Gradually increase the opacity of calibration points when click to give some indication to user.
-        var opacity = 0.2*CalibrationPoints[id]+0.2;
-        $(this).css('opacity',opacity);
-      }
+        if (CalibrationPoints[id]==5){ //only turn to yellow after 5 clicks
+          $(this).css('background-color','yellow');
+          $(this).prop('disabled', true); //disables the button
+          PointCalibrate++;
+        } else if (CalibrationPoints[id]<5){
+          //Gradually increase the opacity of calibration points when click to give some indication to user.
+          var opacity = 0.2*CalibrationPoints[id]+0.2;
+          $(this).css('opacity',opacity);
+        }
 
-      //Show the middle calibration point after all other points have been clicked.
-      if (PointCalibrate == 8){
-        $("#Pt5").show();
-      }
+        //Show the middle calibration point after all other points have been clicked.
+        if (PointCalibrate == 8){
+          $("#Pt5").show();
+        }
 
-      if (PointCalibrate >= 9){ // last point is calibrated
-            // clears the canvas
-            ClearCanvas();
+        if (PointCalibrate >= 9){ // last point is calibrated
+          // clears the canvas
+          runValidation(minAcc, vidOn, predOn);
+        }
+      });
+    }
 
-            $("#Pt5").show();
+    /**
+     * Calculates validation of calibration
+     * @param {Int} minAcc 
+     * @param {Bool} vidOn
+     * @param {Bool} predOn
+     */
+    function runValidation(minAcc, vidOn, predOn) {
+      ClearCanvas();
 
-            // notification for the measurement process
-            swal({
-              title: "Calculating measurement",
-              text: "Please don't move your mouse & stare at the middle dot for the next 5 seconds. This will allow us to calculate the accuracy of our predictions.",
-              closeOnEsc: false,
-              allowOutsideClick: false,
-              closeModal: true
-            }).then( isConfirm => {
+      $("#Pt5").show();
 
-                // makes the variables true for 5 seconds & plots the points
-                $(document).ready(function(){
+      // notification for the measurement process
+      swal({
+        title: "Calculating measurement",
+        text: "Please don't move your mouse & stare at the middle dot for the next 5 seconds. This will allow us to calculate the accuracy of our predictions.",
+        closeOnEsc: false,
+        allowOutsideClick: false,
+        closeModal: true
+      }).then(isConfirm => {
+        if (isConfirm) {
+          // makes the variables true for 5 seconds & plots the points
+          $(document).ready(function(){
 
-                  store_points_variable(); // start storing the prediction points
+            store_points_variable(); // start storing the prediction points
 
-                  sleep(5000).then(() => {
-                      stop_storing_points_variable(); // stop storing the prediction points
-                      var past50 = webgazer.getStoredPoints(); // retrieve the stored points
-                      var precision_measurement = calculatePrecision(past50);
-                      trial_data['cal_accuracy'] = precision_measurement;
+            sleep(5000).then(() => {
+              stop_storing_points_variable(); // stop storing the prediction points
+              var past50 = webgazer.getStoredPoints(); // retrieve the stored points
+              var precision_measurement = calculatePrecision(past50);
+              trial_data['cal_accuracy'] = precision_measurement;
 
-                      if (precision_measurement < minAcc) {
-                        swal({
-                          title: "Your accuracy measure is " + precision_measurement + "%.",
-                          text: "This is too low, so you need to recalibrate.",
-                          allowOutsideClick: false,
-                          buttons: {
-                            confirm: {
-                              text: "Recalibrate",
-                              value: true
-                            }
-                          }
-                        }).then(isConfirm => {
-                            if (isConfirm) {
-                              webgazer.clearData();
-                              ClearCalibration();
-                              ClearCanvas();
-                              ShowCalibrationPoint();
-                            }
-                        });
-                      } else {
-                        swal({
-                          title: "Your accuracy measure is " + precision_measurement + "%",
-                          allowOutsideClick: false,
-                          buttons: {
-                            cancel: "Recalibrate",
-                            confirm: {
-                              text: "Continue to trial",
-                              value: true,
-                              className: "end_cal_jspsych"
-                            }
-                          }
-                        }).then(isConfirm => {
-                            if (isConfirm){
-                              //clear the calibration & hide the last middle button
-                              ClearCanvas();
-
-                              // show or hide video previews and predictions
-                              webgazer.showVideoPreview(vidOn)
-                                  .showPredictionPoints(predOn)
-                              
-                              // remove eye-content class from jspsych_content to reset resizing
-                              var jspsych_content = document.getElementById("jspsych-content");
-                              jspsych_content.classList.remove("eye-content");
-
-                              // end trial
-                              jsPsych.finishTrial(trial_data);
-                            } else {
-                              //use restart function to restart the calibration
-                              webgazer.clearData();
-                              ClearCalibration();
-                              ClearCanvas();
-                              ShowCalibrationPoint();
-                            }
-                        });
-                      }
-                  });
+              if (precision_measurement < minAcc) {
+                swal({
+                  title: "Your accuracy measure is " + precision_measurement + "%.",
+                  text: "This is too low, so you need to recalibrate.",
+                  allowOutsideClick: false,
+                  buttons: {
+                    confirm: {
+                      text: "Recalibrate",
+                      value: true
+                    }
+                  }
+                }).then(isConfirm => {
+                  if (isConfirm) {
+                    webgazer.clearData();
+                    ClearCalibration();
+                    ClearCanvas();
+                    ShowCalibrationPoint();
+                  }
                 });
+              } else {
+                swal({
+                  title: "Your accuracy measure is " + precision_measurement + "%",
+                  allowOutsideClick: false,
+                  buttons: {
+                    cancel: "Recalibrate",
+                    confirm: {
+                      text: "Continue to trial",
+                      value: true,
+                      className: "end_cal_jspsych"
+                    }
+                  }
+                }).then(isConfirm => {
+                  if (isConfirm){
+                    //clear the calibration & hide the last middle button
+                    ClearCanvas();
+
+                    // show or hide video previews and predictions
+                    webgazer.showVideoPreview(vidOn)
+                      .showPredictionPoints(predOn)
+                    
+                    // remove eye-content class from jspsych_content to reset resizing
+                    var jspsych_content = document.getElementById("jspsych-content");
+                    jspsych_content.classList.remove("eye-content");
+
+                    // end trial
+                    jsPsych.finishTrial(trial_data);
+                  } else {
+                    //use restart function to restart the calibration
+                    webgazer.clearData();
+                    ClearCalibration();
+                    ClearCanvas();
+                    ShowCalibrationPoint();
+                  }
+                });
+              }
             });
-          }
+          });
+        }
       });
     }
 
@@ -291,6 +332,29 @@ jsPsych.plugins['eye-tracking'] = (function(){
       return new Promise((resolve) => setTimeout(resolve, time));
     }
 
+    /**
+     * Check to see whether screen is full screen
+     */
+    function isFullscreen(){
+      return (document.fullscreenElement || document.mozFullScreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+    }
+
+    /**
+     * launch element into fullscreen
+     * @param {*} element a DOM element, for example document.documentElement
+     */
+    function launchIntoFullscreen(element){
+      if(element.requestFullscreen) {
+        element.requestFullscreen();
+      } else if(element.mozRequestFullScreen) {
+        element.mozRequestFullScreen();
+      } else if(element.webkitRequestFullscreen) {
+        element.webkitRequestFullscreen();
+      } else if(element.msRequestFullscreen) {
+        element.msRequestFullscreen();
+      }
+    }
+
     // ==============plugin============== //
     var plugin = {};
   
@@ -306,6 +370,10 @@ jsPsych.plugins['eye-tracking'] = (function(){
           default: false
         },
         predictionOn: { // if true: leave points prediction on after calibration
+          type: jsPsych.plugins.parameterType.BOOL,
+          default: false
+        },
+        validation: { // if true: only validation, no calibration
           type: jsPsych.plugins.parameterType.BOOL,
           default: false
         }
@@ -331,9 +399,25 @@ jsPsych.plugins['eye-tracking'] = (function(){
       // changing display
       display_element.innerHTML = dots;
 
-      // starting calibration
+      // checking browser type
+      checkBrowser();
+
+      // check if webgazer has previously started, else: start it
+      webgazer.clearData();
+      ClearCalibration();
+      ClearCanvas();
+      ShowCalibrationPoint();
       StartWebgazer();
-      StartCalibration(trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
+
+      if (trial.validation == true) {
+        // only validation
+        trial_data['type'] = 'validation';
+        runValidation();
+      } else {
+        // calibration and validation
+        trial_data['type'] = 'calibration';
+        StartCalibration(trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
+      }
 
       // closing webgazer when window is closed
       window.onbeforeunload = function() {
@@ -367,7 +451,7 @@ function collectEyeData() {
                   });
               });
       },
-      100 // number of ms per which to execute setInterval
+      1 // number of ms per which to execute setInterval
     )
   return [eyeData, eyeInterval];
 }
