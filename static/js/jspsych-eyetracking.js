@@ -76,7 +76,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     * This function calculates a measurement for how precise 
     * the eye tracker currently is which is displayed to the user
     */
-    function calculatePrecision(past50Array) {
+    function calculatePrecision(past50Array, maxDistance) {
       var windowHeight = $(window).height();
       var windowWidth = $(window).width();
 
@@ -88,13 +88,58 @@ jsPsych.plugins['eye-tracking'] = (function(){
       var staringPointX = windowWidth / 2;
       var staringPointY = windowHeight / 2;
 
-      var precisionPercentages = new Array(50);
-      calculatePrecisionPercentages(precisionPercentages, windowHeight, x50, y50, staringPointX, staringPointY);
-      var precision = calculateAverage(precisionPercentages);
+      trial_data['validation_point'] = {
+        'x': staringPointX,
+        'y': staringPointY
+      }
+
+      // var precisionPercentages = new Array(50);
+      // calculatePrecisionPercentages(precisionPercentages, windowHeight, x50, y50, staringPointX, staringPointY);
+      // var precision = calculateAverage(precisionPercentages);
+
+      // calculate accuracy
+      var precision = calculateAccuracy(x50, y50, staringPointX, staringPointY, maxDistance);
 
       // Return the precision measurement as a rounded percentage
       return Math.round(precision);
     };
+
+    /**
+    * Calculates accuracy based on distance prediciton points from middle point
+    */
+    function calculateAccuracy(x50, y50, staringPointX, staringPointY, maxDistance) {
+      // variables
+      var precisePoints = 0;
+      var validationData = [];
+
+      // calculate max distance (from cm to px)
+      var maxDistance = maxDistance * 37.7952755906; // 1 cm is 37.7952755906 px
+
+      for (x = 0; x < 50; x++) {
+        // Calculate distance between each prediction and staring point
+        var xDiff = staringPointX - x50[x];
+        var yDiff = staringPointY - y50[x];
+        var distance = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
+
+        validationData.push({
+          'x': x50[x],
+          'y': y50[x],
+          'distance in px': distance,
+          'distance in cm': distance / 37.7952755906
+        });
+
+        if (distance < maxDistance) { // max distance from staring point as specified by user
+          precisePoints += 1;
+        }
+      }
+
+      trial_data['validation data'] = validationData;
+
+      // calculate percentage of points that were inside the maxDistance range
+      var precision = (precisePoints / 50) * 100;
+
+      return precision;
+    }
 
     /**
     * Calculate percentage accuracy for each prediction based on distance of
@@ -174,7 +219,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     * @param {Bool} vidOn
     * @param {Bool} predOn
     */
-    function StartCalibration(minAcc, vidOn, predOn){
+    function StartCalibration(maxDistance, minAcc, vidOn, predOn){
       PopUpInstruction();
 
       ClearCanvas();
@@ -206,7 +251,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
 
         if (PointCalibrate >= 9){ // last point is calibrated
           // clears the canvas
-          runValidation(minAcc, vidOn, predOn);
+          runValidation(maxDistance, minAcc, vidOn, predOn);
         }
       });
     }
@@ -217,7 +262,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
      * @param {Bool} vidOn
      * @param {Bool} predOn
      */
-    function runValidation(minAcc, vidOn, predOn) {
+    function runValidation(maxDistance, minAcc, vidOn, predOn) {
       ClearCanvas();
 
       $("#Pt5").show();
@@ -239,7 +284,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
             sleep(5000).then(() => {
               stop_storing_points_variable(); // stop storing the prediction points
               var past50 = webgazer.getStoredPoints(); // retrieve the stored points
-              var precision_measurement = calculatePrecision(past50);
+              var precision_measurement = calculatePrecision(past50, maxDistance);
               trial_data['cal_accuracy'] = precision_measurement;
 
               if (precision_measurement < minAcc) {
@@ -361,6 +406,14 @@ jsPsych.plugins['eye-tracking'] = (function(){
     plugin.info = {
       name: 'eye-tracking',
       parameters: {
+        validation: { // if true: only validation, no calibration
+          type: jsPsych.plugins.parameterType.BOOL,
+          default: false
+        },
+        maximumDistance: { // max distance (in cm) for prediction points from actual point
+          type: jsPsych.plugins.parameterType.INT,
+          default: 3          
+        },
         minimumAccuracy: { // minimum accuracy to pass calibration
           type: jsPsych.plugins.parameterType.INT,
           default: 50
@@ -370,10 +423,6 @@ jsPsych.plugins['eye-tracking'] = (function(){
           default: false
         },
         predictionOn: { // if true: leave points prediction on after calibration
-          type: jsPsych.plugins.parameterType.BOOL,
-          default: false
-        },
-        validation: { // if true: only validation, no calibration
           type: jsPsych.plugins.parameterType.BOOL,
           default: false
         }
@@ -412,11 +461,11 @@ jsPsych.plugins['eye-tracking'] = (function(){
       if (trial.validation == true) {
         // only validation
         trial_data['type'] = 'validation';
-        runValidation();
+        runValidation(trial.maximumDistance, trial.minimumAccuracy, trial.vidOn, trial.predictionOn);
       } else {
         // calibration and validation
         trial_data['type'] = 'calibration';
-        StartCalibration(trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
+        StartCalibration(trial.maximumDistance, trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
       }
 
       // closing webgazer when window is closed
