@@ -87,6 +87,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
       // Calculate the position of the point the user is staring at
       var staringPointX = windowWidth / 2;
       var staringPointY = windowHeight / 2;
+      console.log('staringpoint: ('+ staringPointX + ',' + staringPointY + ')');
 
       trial_data['validation_point'] = {
         'x': staringPointX,
@@ -112,20 +113,17 @@ jsPsych.plugins['eye-tracking'] = (function(){
       var precisePoints = 0;
       var validationData = [];
 
-      // calculate max distance (from cm to px)
-      var maxDistance = maxDistance * 37.7952755906; // 1 cm is 37.7952755906 px
-
       for (x = 0; x < 50; x++) {
         // Calculate distance between each prediction and staring point
         var xDiff = staringPointX - x50[x];
         var yDiff = staringPointY - y50[x];
         var distance = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
+        console.log('point ' + x + ': (' + x50[x] + ',' + y50[x] + ')');
 
         validationData.push({
           'x': x50[x],
           'y': y50[x],
-          'distance in px': distance,
-          'distance in cm': distance / 37.7952755906
+          'distance in px': distance
         });
 
         if (distance < maxDistance) { // max distance from staring point as specified by user
@@ -410,9 +408,9 @@ jsPsych.plugins['eye-tracking'] = (function(){
           type: jsPsych.plugins.parameterType.BOOL,
           default: false
         },
-        maximumDistance: { // max distance (in cm) for prediction points from actual point
+        maximumDistance: { // max distance (in px) for prediction points from actual point
           type: jsPsych.plugins.parameterType.INT,
-          default: 3          
+          default: 100          
         },
         minimumAccuracy: { // minimum accuracy to pass calibration
           type: jsPsych.plugins.parameterType.INT,
