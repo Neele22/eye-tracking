@@ -3,6 +3,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     var PointCalibrate = 0;
     var CalibrationPoints={};
     var trial_data = {};
+    var n_cal = 0; // number of calibrations already tried
 
     // ============== helper functions ================ //
 
@@ -87,7 +88,6 @@ jsPsych.plugins['eye-tracking'] = (function(){
       // Calculate the position of the point the user is staring at
       var staringPointX = windowWidth / 2;
       var staringPointY = windowHeight / 2;
-      console.log('staringpoint: ('+ staringPointX + ',' + staringPointY + ')');
 
       trial_data['validation_point'] = {
         'x': staringPointX,
@@ -118,7 +118,6 @@ jsPsych.plugins['eye-tracking'] = (function(){
         var xDiff = staringPointX - x50[x];
         var yDiff = staringPointY - y50[x];
         var distance = Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
-        console.log('point ' + x + ': (' + x50[x] + ',' + y50[x] + ')');
 
         validationData.push({
           'x': x50[x],
@@ -202,7 +201,6 @@ jsPsych.plugins['eye-tracking'] = (function(){
         }
       }).then(isConfirm => {
         if(!isFullscreen()) {
-          console.log('to full screen');
           launchIntoFullscreen(document.documentElement);
         }
         ShowCalibrationPoint();
@@ -285,7 +283,8 @@ jsPsych.plugins['eye-tracking'] = (function(){
               var precision_measurement = calculatePrecision(past50, maxDistance);
               trial_data['cal_accuracy'] = precision_measurement;
 
-              if (precision_measurement < minAcc) {
+              if ((precision_measurement < minAcc) && (n_cal < 2)) {
+                n_cal = n_cal + 1;
                 swal({
                   title: "Your accuracy measure is " + precision_measurement + "%.",
                   text: "This is too low, so you need to recalibrate.",
@@ -305,6 +304,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
                   }
                 });
               } else {
+                n_cal = 0;
                 swal({
                   title: "Your accuracy measure is " + precision_measurement + "%",
                   allowOutsideClick: false,
