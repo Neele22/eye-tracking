@@ -215,7 +215,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
     * @param {Bool} vidOn
     * @param {Bool} predOn
     */
-    function StartCalibration(maxDistance, minAcc, vidOn, predOn){
+    function StartCalibration(maxDistance, minAcc, vidOn, predOn, valTrial){
       PopUpInstruction();
 
       ClearCanvas();
@@ -247,7 +247,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
 
         if (PointCalibrate >= 9){ // last point is calibrated
           // clears the canvas
-          runValidation(maxDistance, minAcc, vidOn, predOn);
+          runValidation(maxDistance, minAcc, vidOn, predOn, valTrial);
         }
       });
     }
@@ -258,7 +258,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
      * @param {Bool} vidOn
      * @param {Bool} predOn
      */
-    function runValidation(maxDistance, minAcc, vidOn, predOn) {
+    function runValidation(maxDistance, minAcc, vidOn, predOn, valTrial) {
       ClearCanvas();
 
       $("#Pt5").show();
@@ -282,9 +282,9 @@ jsPsych.plugins['eye-tracking'] = (function(){
               var past50 = webgazer.getStoredPoints(); // retrieve the stored points
               var precision_measurement = calculatePrecision(past50, maxDistance);
               trial_data['cal_accuracy'] = precision_measurement;
+              n_cal = n_cal + 1;
 
-              if ((precision_measurement < minAcc) && (n_cal < 2)) {
-                n_cal = n_cal + 1;
+              if ((precision_measurement < minAcc) && (n_cal < 3) && (valTrial == false)) { // maximum number of cals = 3, only when in cal+val trial
                 swal({
                   title: "Your accuracy measure is " + precision_measurement + "%.",
                   text: "This is too low, so you need to recalibrate.",
@@ -304,12 +304,16 @@ jsPsych.plugins['eye-tracking'] = (function(){
                   }
                 });
               } else {
+                trial_data['n_cals'] = n_cal;
                 n_cal = 0;
                 swal({
                   title: "Your accuracy measure is " + precision_measurement + "%",
                   allowOutsideClick: false,
                   buttons: {
-                    cancel: "Recalibrate",
+                    cancel: {
+                      text: "Recalibrate",
+                      value: !valTrial // only show this option when in a cal + val trial
+                    },
                     confirm: {
                       text: "Continue to trial",
                       value: true,
@@ -449,7 +453,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
       // checking browser type
       checkBrowser();
 
-      // check if webgazer has previously started, else: start it
+      // check if webgazer has previously started, else: start it (how??)
       webgazer.clearData();
       ClearCalibration();
       ClearCanvas();
@@ -459,11 +463,11 @@ jsPsych.plugins['eye-tracking'] = (function(){
       if (trial.validation == true) {
         // only validation
         trial_data['type'] = 'validation';
-        runValidation(trial.maximumDistance, trial.minimumAccuracy, trial.vidOn, trial.predictionOn);
+        runValidation(trial.maximumDistance, trial.minimumAccuracy, trial.videoOn, trial.predictionOn, trial.validation);
       } else {
         // calibration and validation
         trial_data['type'] = 'calibration';
-        StartCalibration(trial.maximumDistance, trial.minimumAccuracy, trial.videoOn, trial.predictionOn);
+        StartCalibration(trial.maximumDistance, trial.minimumAccuracy, trial.videoOn, trial.predictionOn, trial.validation);
       }
 
       // closing webgazer when window is closed
