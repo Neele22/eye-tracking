@@ -261,90 +261,96 @@ jsPsych.plugins['eye-tracking'] = (function(){
     function runValidation(maxDistance, minAcc, vidOn, predOn, valTrial) {
       ClearCanvas();
 
-      $("#Pt5").show();
+      $("#Pt10").show();
 
       // notification for the measurement process
       swal({
         title: "Calculating measurement",
-        text: "Please don't move your mouse & stare at the middle dot for the next 5 seconds. This will allow us to calculate the accuracy of our predictions.",
+        text: "Please click once on and then stare at the middle dot for the next 5 seconds. This will allow us to calculate the accuracy of our predictions.",
         closeOnEsc: false,
         allowOutsideClick: false,
         closeModal: true
       }).then(isConfirm => {
         if (isConfirm) {
-          // makes the variables true for 5 seconds & plots the points
-          $(document).ready(function(){
 
-            store_points_variable(); // start storing the prediction points
+          $("#Pt10").click(function(){
 
-            sleep(5000).then(() => {
-              stop_storing_points_variable(); // stop storing the prediction points
-              var past50 = webgazer.getStoredPoints(); // retrieve the stored points
-              var precision_measurement = calculatePrecision(past50, maxDistance);
-              trial_data['cal_accuracy'] = precision_measurement;
-              n_cal = n_cal + 1;
+            // makes the variables true for 5 seconds & plots the points
+            // $(document).ready(function(){
 
-              if ((precision_measurement < minAcc) && (n_cal < 3) && (valTrial == false)) { // maximum number of cals = 3, only when in cal+val trial
-                swal({
-                  title: "Your accuracy measure is " + precision_measurement + "%.",
-                  text: "This is too low, so you need to recalibrate.",
-                  allowOutsideClick: false,
-                  buttons: {
-                    confirm: {
-                      text: "Recalibrate",
-                      value: true
+              store_points_variable(); // start storing the prediction points
+
+              sleep(5000).then(() => {
+                stop_storing_points_variable(); // stop storing the prediction points
+                var past50 = webgazer.getStoredPoints(); // retrieve the stored points
+                var precision_measurement = calculatePrecision(past50, maxDistance);
+                trial_data['cal_accuracy'] = precision_measurement;
+                n_cal = n_cal + 1;
+                $("#Pt10").hide();
+
+                if ((precision_measurement < minAcc) && (n_cal < 3) && (valTrial == false)) { // maximum number of cals = 3, only when in cal+val trial
+                  swal({
+                    title: "Your accuracy measure is " + precision_measurement + "%.",
+                    text: "This is too low, so you need to recalibrate.",
+                    allowOutsideClick: false,
+                    buttons: {
+                      confirm: {
+                        text: "Recalibrate",
+                        value: true
+                      }
                     }
-                  }
-                }).then(isConfirm => {
-                  if (isConfirm) {
-                    webgazer.clearData();
-                    ClearCalibration();
-                    ClearCanvas();
-                    ShowCalibrationPoint();
-                  }
-                });
-              } else {
-                trial_data['n_cals'] = n_cal;
-                n_cal = 0;
-                swal({
-                  title: "Your accuracy measure is " + precision_measurement + "%",
-                  allowOutsideClick: false,
-                  buttons: {
-                    cancel: {
-                      text: "Recalibrate",
-                      value: !valTrial // only show this option when in a cal + val trial
-                    },
-                    confirm: {
-                      text: "Continue to trial",
-                      value: true,
-                      className: "end_cal_jspsych"
+                  }).then(isConfirm => {
+                    if (isConfirm) {
+                      webgazer.clearData();
+                      ClearCalibration();
+                      ClearCanvas();
+                      ShowCalibrationPoint();
                     }
-                  }
-                }).then(isConfirm => {
-                  if (isConfirm){
-                    //clear the calibration & hide the last middle button
-                    ClearCanvas();
+                  });
+                } else {
+                  trial_data['n_cals'] = n_cal;
+                  n_cal = 0;
+                  swal({
+                    title: "Your accuracy measure is " + precision_measurement + "%",
+                    allowOutsideClick: false,
+                    buttons: {
+                      cancel: {
+                        text: "Recalibrate",
+                        value: !valTrial // only show this option when in a cal + val trial
+                      },
+                      confirm: {
+                        text: "Continue to trial",
+                        value: true,
+                        className: "end_cal_jspsych"
+                      }
+                    }
+                  }).then(isConfirm => {
+                    if (isConfirm){
+                      //clear the calibration & hide the last middle button
+                      ClearCanvas();
 
-                    // show or hide video previews and predictions
-                    webgazer.showVideoPreview(vidOn)
-                      .showPredictionPoints(predOn)
-                    
-                    // remove eye-content class from jspsych_content to reset resizing
-                    var jspsych_content = document.getElementById("jspsych-content");
-                    jspsych_content.classList.remove("eye-content");
+                      // show or hide video previews and predictions
+                      webgazer.showVideoPreview(vidOn)
+                        .showPredictionPoints(predOn)
+                      
+                      // remove eye-content class from jspsych_content to reset resizing
+                      var jspsych_content = document.getElementById("jspsych-content");
+                      jspsych_content.classList.remove("eye-content");
 
-                    // end trial
-                    jsPsych.finishTrial(trial_data);
-                  } else {
-                    //use restart function to restart the calibration
-                    webgazer.clearData();
-                    ClearCalibration();
-                    ClearCanvas();
-                    ShowCalibrationPoint();
-                  }
-                });
-              }
-            });
+                      // end trial
+                      jsPsych.finishTrial(trial_data);
+                    } else {
+                      //use restart function to restart the calibration
+                      webgazer.clearData();
+                      ClearCalibration();
+                      ClearCanvas();
+                      ShowCalibrationPoint();
+                    }
+                  });
+                }
+              });
+            // });
+          
           });
         }
       });
@@ -443,6 +449,7 @@ jsPsych.plugins['eye-tracking'] = (function(){
       <input type="button" class="Calibration" id="Pt7"></input>
       <input type="button" class="Calibration" id="Pt8"></input>
       <input type="button" class="Calibration" id="Pt9"></input>
+      <input type="button" class="Validation" id="Pt10"></input>
     </div>
     `;          
 
